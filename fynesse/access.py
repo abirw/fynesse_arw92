@@ -190,7 +190,7 @@ def get_properties_bounding_box(lat,lon,dist,pt,date):
 
 
 def get_all_properties_within_dist(lat, lon, dist):
-  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon,	pc.postcode_sector as postcode_sector
+  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon
   FROM (SELECT * FROM `pp_data`) pp
   INNER JOIN (SELECT 
               postcode, lattitude, longitude,
@@ -215,7 +215,7 @@ def get_all_properties_within_dist(lat, lon, dist):
   return rows, cols
 
 def get_properties_within_dist_type_date(lat, lon, dist, pt, date):
-  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon,	pc.postcode_sector as postcode_sector
+  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon
   FROM (SELECT * FROM `pp_data` WHERE property_type = '{pt}' AND DATEDIFF('{date}', date_of_transfer) < 365*10 AND date_of_transfer < '{date}') pp
   INNER JOIN (SELECT 
               postcode, lattitude, longitude,
