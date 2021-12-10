@@ -40,7 +40,7 @@ def labelled(data):
 
 
 # --------------------------------------------------------------------------------------------
-# PLOTTING MAPS
+# EXPLORING PRICE PAID DATA
 # --------------------------------------------------------------------------------------------
 
 def convert_to_gdf(pdf):
@@ -126,7 +126,54 @@ def plot_pois_map(north, south, east, west, name, points, alpha, kind):
   # Plot all POIs 
   points.plot(ax=ax, alpha=alpha, markersize=5, zorder=3, legend=True)
 
+def plot_pt_price_hist(pdf):
+  D = pdf[pdf["type"] == 'D']["price"]
+  S = pdf[pdf["type"] == 'S']["price"]
+  T = pdf[pdf["type"] == 'T']["price"]
+  F = pdf[pdf["type"] == 'F']["price"]
+  O = pdf[pdf["type"] == 'O']["price"]
 
+  bins = np.linspace(start=0, num=50, stop=pdf["price"].max())
+
+  plt.hist(D, bins, alpha=0.2, label='D',histtype="stepfilled")
+  plt.hist(S, bins, alpha=0.2, label='S',histtype="stepfilled")
+  plt.hist(T, bins, alpha=0.2, label='T',histtype="stepfilled")
+  plt.hist(F, bins, alpha=0.2, label='F',histtype="stepfilled")
+  plt.hist(O, bins, alpha=0.2, label='O',histtype="stepfilled")
+  plt.legend(loc='upper right')
+  plt.show()
+
+
+def remove_price_first_percentiles(pdf):
+  return pdf[(pdf["price"]>pdf["price"].quantile(0.001)) & (pdf["price"]<pdf["price"].quantile(0.99))]
+
+def plot_price_map(north, south, east, west, name, points, alpha):
+  graph = ox.graph_from_bbox(north, south, east, west)
+
+  # Retrieve nodes and edges
+  nodes, edges = ox.graph_to_gdfs(graph)
+
+  # Get place boundary related to the place name as a geodataframe
+  area = ox.geocode_to_gdf(name)
+
+  fig, ax = plt.subplots(figsize=plot.big_figsize)
+
+  # Plot the footprint
+  area.plot(ax=ax, facecolor="white", zorder=1)
+
+  # Plot street edges
+  edges.plot(ax=ax, linewidth=1, edgecolor="dimgray", zorder=2)
+
+  ax.set_xlim([west, east])
+  ax.set_ylim([south, north])
+  ax.set_xlabel("longitude")
+  ax.set_ylabel("latitude")
+
+  # Plot all points, not including other property type to get a better price scale
+  new_points = points[points["type"]!='O']
+  new_points.plot(ax=ax, column='price',cmap='plasma', alpha=alpha, markersize=5, zorder=3, legend=True)
+
+  
 
 
 # --------------------------------------------------------------------------------------------
