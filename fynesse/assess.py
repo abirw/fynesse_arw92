@@ -37,6 +37,63 @@ def labelled(data):
     raise NotImplementedError
 
 
+# --------------------------------------------------------------------------------------------
+# LOOKING AT MISSING DATA
+# --------------------------------------------------------------------------------------------
+
+def select_top_wcols(conn, table,  n):
+    """
+    Query n first rows of the table
+    :param conn: the Connection object
+    :param table: The table to query
+    :param n: Number of rows to query
+    """
+    username, password, url = access.get_credentials_from_file()
+    conn = access.create_connection(username, password, url, "arw92-database")
+    cur = conn.cursor()
+    cur.execute(f'SELECT * FROM `{table}` LIMIT {n}')
+    # cur.execute(f'SELECT * FROM `{table}`;')
+
+    cols = [column[0] for column in cur.description] 
+    rows = cur.fetchall()
+    return rows, cols
+
+def count_all(table):
+  username, password, url = access.get_credentials_from_file()
+  conn = access.create_connection(username, password, url, "arw92-database")
+  cur = conn.cursor()
+  #   This count includes null values
+  cur.execute(f'SELECT COUNT(*) as total FROM `{table}`')
+  cols = [column[0] for column in cur.description] 
+  rows = cur.fetchall()
+  return rows, cols
+
+def null_count(table, column, total):
+  username, password, url = access.get_credentials_from_file()
+  conn = access.create_connection(username, password, url, "arw92-database")
+  cur = conn.cursor()
+  cur.execute(f"SELECT {total}-COUNT('{column}') As {column} FROM {table};")
+  cols = [column[0] for column in cur.description] 
+  rows = cur.fetchall()
+  return rows, cols
+
+def empty_count(table, column, id):
+  username, password, url = access.get_credentials_from_file()
+  conn = access.create_connection(username, password, url, "arw92-database")
+  cur = conn.cursor()
+  cur.execute(f"SELECT COUNT('{id}') As total FROM {table} WHERE {column} = '';")
+  cols = [column[0] for column in cur.description] 
+  rows = cur.fetchall()
+  return rows, cols
+
+def sel_empty(table, col):
+  username, password, url = access.get_credentials_from_file()
+  conn = access.create_connection(username, password, url, "arw92-database")
+  cur = conn.cursor()
+  cur.execute(f"SELECT *  FROM `{table}` WHERE {col} = ''")
+  cols = [column[0] for column in cur.description] 
+  rows = cur.fetchall()
+  return rows, cols
 
 
 # --------------------------------------------------------------------------------------------
@@ -173,7 +230,7 @@ def plot_price_map(north, south, east, west, name, points, alpha):
   new_points = points[points["type"]!='O']
   new_points.plot(ax=ax, column='price',cmap='plasma', alpha=alpha, markersize=5, zorder=3, legend=True)
 
-  
+
 
 
 # --------------------------------------------------------------------------------------------

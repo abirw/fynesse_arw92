@@ -134,6 +134,7 @@ def get_all_properties_bounding_box(lat,lon,dist):
   east = lon + across
   west = lon - across
 
+  username, password, url = get_credentials_from_file()
   conn = create_connection(username, password, url, "arw92-database")
 
   cur = conn.cursor()
@@ -169,12 +170,13 @@ def get_properties_bounding_box(lat,lon,dist,pt,date):
   east = lon + across
   west = lon - across
 
+  username, password, url = get_credentials_from_file()
   conn = create_connection(username, password, url, "arw92-database")
 
   cur = conn.cursor()
   cur.execute(f"""
   SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon,	pc.postcode_sector as postcode_sector
-  FROM (SELECT * FROM `pp_data` WHERE property_type = '{pt}' AND DATEDIFF('{date}', date_of_transfer) < 365*5 AND date_of_transfer < '{date}') pp
+  FROM (SELECT * FROM `pp_data` WHERE property_type = '{pt}' AND DATEDIFF('{date}', date_of_transfer) < 365*10 AND date_of_transfer < '{date}') pp
   INNER JOIN (SELECT 
               postcode, postcode_sector, lattitude, longitude 
               FROM `postcode_data`
@@ -187,6 +189,55 @@ def get_properties_bounding_box(lat,lon,dist,pt,date):
   return rows, cols, north, south, east, west
 
 
+def get_all_properties_within_dist(lat, lon, dist):
+  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon,	pc.postcode_sector as postcode_sector
+  FROM (SELECT * FROM `pp_data`) pp
+  INNER JOIN (SELECT 
+              postcode, lattitude, longitude,
+              (6371 *
+                acos(cos(radians({lat})) * 
+                cos(radians(lattitude)) * 
+                cos(radians(longitude) - 
+                radians({lon})) + 
+                sin(radians({lat})) * 
+                sin(radians(lattitude)))
+              ) AS distance 
+              FROM `postcode_data` 
+              HAVING distance < {dist}) pc
+  ON pp.postcode = pc.postcode;"""
+
+  username, password, url = get_credentials_from_file()
+  conn = create_connection(username, password, url, "arw92-database")
+  cur = conn.cursor()
+  cur.execute(query)
+  cols= [column[0] for column in cur.description]
+  rows = cur.fetchall()
+  return rows, cols
+
+def get_properties_within_dist_type_date(lat, lon, dist, pt, date):
+  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon,	pc.postcode_sector as postcode_sector
+  FROM (SELECT * FROM `pp_data` WHERE property_type = '{pt}' AND DATEDIFF('{date}', date_of_transfer) < 365*10 AND date_of_transfer < '{date}') pp
+  INNER JOIN (SELECT 
+              postcode, lattitude, longitude,
+              (6371 *
+                acos(cos(radians({lat})) * 
+                cos(radians(lattitude)) * 
+                cos(radians(longitude) - 
+                radians({lon})) + 
+                sin(radians({lat})) * 
+                sin(radians(lattitude)))
+              ) AS distance 
+              FROM `postcode_data` 
+              HAVING distance < {dist}) pc
+  ON pp.postcode = pc.postcode;"""
+
+  username, password, url = get_credentials_from_file()
+  conn = create_connection(username, password, url, "arw92-database")
+  cur = conn.cursor()
+  cur.execute(query)
+  cols= [column[0] for column in cur.description]
+  rows = cur.fetchall()
+  return rows, cols
 
 # --------------------------------------------------------------------------------------------
 # GETTING POINTS OF INTEREST
@@ -267,18 +318,11 @@ def get_tags(kind):
     }
   return tags
 
-def features_around_point(lat, lon, dist, kind):
+def features_around_point_bbox(lat, lon, d, kind):
   """Given a point and a distance, returns all pois of type kind in a bounding box of that distance around the point."""
-  up = (dist/11.1)*0.1
-  across = (dist*0.1)/(11.1*math.cos(math.radians(lat)))
-
-  north = lat + up
-  south = lat - up
-  east = lon + across
-  west = lon - across
-
-  return ox.geometries_from_bbox(north, south, east, west, get_tags(kind))
+  return ox.geometries.geometries_from_point((lat,lon), get_tags(kind), dist=d*1000)
 
 def features_around_point_wbounds(n, s, e, w, kind):
   """Given a set of bounds, returns all pois of type kind in that bounding box."""
   return ox.geometries_from_bbox(n, s, e, w, get_tags(kind))
+
