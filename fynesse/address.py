@@ -112,10 +112,9 @@ def make_prediction(lat, lon, date, pt):
 
 
   features = list(props.columns)
-  for x in ['price', 'date_int', 'lat', 'lon']:
+  for x in ['price', 'date_int', 'lat', 'lon','distance']:
     features.remove(x)
   
-  props = get_distance_to_point(lat, lon, props)
   weight_cols = ['date_int', 'distance']
   x = props[features].to_numpy()
   y = props["price"].to_numpy()
