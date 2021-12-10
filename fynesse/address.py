@@ -22,6 +22,7 @@ from . import assess
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.linear_model import PoissonRegressor
 
 def get_properties_bounding_boxw_dist(lat,lon,dist,pt,date):
   up = dist/111
@@ -107,17 +108,18 @@ def get_prediction_data(lat, lon, date, kinds, sizes, dist):
 def make_prediction(lat, lon, date, pt):
   dist, kinds, sizes = (3, ["schools", "public_transport","parks_and_rec", "services", "rural"],[1,1,1,1,1])
   props = assess.get_props_with_features(lat, lon, date, pt, dist, kinds, sizes)
-  props = address.get_distance_to_point(lat,lon,props)
+  props = get_distance_to_point(lat,lon,props)
 
 
   features = list(props.columns)
   for x in ['price', 'date_int', 'lat', 'lon']:
     features.remove(x)
-
+  
+  props = get_distance_to_point(lat, lon, props)
   weight_cols = ['date_int', 'distance']
-  x = b_feat[features].to_numpy()
-  y = b_feat["price"].to_numpy()
-  w = b_feat[weight_cols].to_numpy()
+  x = props[features].to_numpy()
+  y = props["price"].to_numpy()
+  w = props[weight_cols].to_numpy()
   
   ss = StandardScaler()
   x = ss.fit_transform(x)
@@ -130,7 +132,7 @@ def make_prediction(lat, lon, date, pt):
 
   new_props = pd.concat([new_props, props[["price"]]], axis=1)
 
-  weight1 = get_weights(weight_cols, w)
+  weight1 = get_weights(weight_cols, w, date)
 
   to_pred = get_prediction_data(lat, lon,date, kinds, sizes, dist)
 
@@ -139,7 +141,7 @@ def make_prediction(lat, lon, date, pt):
   m_poisson_comb = PoissonRegressor().fit(x1,y, sample_weight=weight1["combined"].to_numpy())
 
 
-  xtopred = to_predict[features].to_numpy()
+  xtopred = to_pred[features].to_numpy()
 
 
   xtopred = ss.transform(xtopred)
