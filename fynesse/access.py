@@ -209,7 +209,14 @@ def get_all_properties_within_dist(lat, lon, dist):
   return rows, cols
 
 def get_properties_within_dist_type_date(lat, lon, dist, pt, date):
-  query = f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon
+  username, password, url = get_credentials_from_file()
+  rows = ()
+  count = 0
+  while len(rows)<10:
+      d= dist * 1.41**count
+      conn = create_connection(username, password, url, "arw92-database")
+      cur = conn.cursor()
+      cur.execute(f"""SELECT pp.transaction_unique_identifier as tui, pp.price as price, pp.date_of_transfer as date, pp.property_type as type,	pp.town_city as town_city, pp.postcode as postcode, pc.lattitude as lat,	pc.longitude as lon
   FROM (SELECT * FROM `pp_data` WHERE property_type = '{pt}' AND DATEDIFF('{date}', date_of_transfer) < 365*10 AND date_of_transfer < '{date}') pp
   INNER JOIN (SELECT 
               postcode, lattitude, longitude,
@@ -222,16 +229,13 @@ def get_properties_within_dist_type_date(lat, lon, dist, pt, date):
                 sin(radians(lattitude)))
               ) AS distance 
               FROM `postcode_data` 
-              HAVING distance < {dist}) pc
-  ON pp.postcode = pc.postcode;"""
-
-  username, password, url = get_credentials_from_file()
-  conn = create_connection(username, password, url, "arw92-database")
-  cur = conn.cursor()
-  cur.execute(query)
-  cols= [column[0] for column in cur.description]
-  rows = cur.fetchall()
-  return rows, cols
+              HAVING distance < {d}) pc
+  ON pp.postcode = pc.postcode;""")
+      cols= [column[0] for column in cur.description]
+      rows = cur.fetchall()
+      count += 1
+  
+  return rows, cols, dist*(1.41**(count-1))
 
 # --------------------------------------------------------------------------------------------
 # GETTING POINTS OF INTEREST

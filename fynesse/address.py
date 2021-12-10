@@ -107,7 +107,7 @@ def get_prediction_data(lat, lon, date, kinds, sizes, dist):
 
 def make_prediction(lat, lon, date, pt):
   dist, kinds, sizes = (5, ["schools", "public_transport","parks_and_rec", "services", "rural"],[1,1,1,1,1])
-  props = assess.get_props_with_features(lat, lon, date, pt, dist, kinds, sizes)
+  props, dist = assess.get_props_with_features(lat, lon, date, pt, dist, kinds, sizes)
   props = get_distance_to_point(lat,lon,props)
 
 

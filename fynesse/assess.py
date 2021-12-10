@@ -329,13 +329,13 @@ def get_features(prop, lat, lon, kinds, sizes, dist):
 
 #  Lat, lon, date, pt and sizes introduced here purely to limit size of the dataset that we're collecting
 def get_props_with_features(lat, lon, date, pt, dist, kinds, sizes):
-  r, c = access.get_properties_within_dist_type_date(lat, lon, dist, pt, date)
+  r, c, new_dist = access.get_properties_within_dist_type_date(lat, lon, dist, pt, date)
   prop = pd.DataFrame.from_records(data=r, columns=c)
 
   if prop.shape[0] > 0:
-    prop_feat, names = get_features(prop, lat, lon, kinds, sizes, dist)
+    prop_feat, names = get_features(prop, lat, lon, kinds, sizes, new_dist)
     prop_feat['date_int'] = pd.to_datetime(prop_feat['date']).astype(int)/10**9
-    return prop_feat[["price", "date_int", "lat", "lon"]+names].copy()
+    return prop_feat[["price", "date_int", "lat", "lon"]+names].copy(), new_dist
   else:
     return None
 
