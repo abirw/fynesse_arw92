@@ -211,6 +211,42 @@ def plot_each_kind(n,s,e,w,name, pois_list, kinds, alpha):
     # Plot all POIs 
     pois_list[i].plot(ax=axs[i], alpha=alpha, markersize=5, zorder=3, legend=True)
 
+def plot_each_feature(n,s,e,w,name, points, kinds, alpha):
+  # this method assumes there are columns corresponding to all kinds
+  graph = ox.graph_from_bbox(n, s, e, w)
+
+  # Retrieve nodes and edges
+  nodes, edges = ox.graph_to_gdfs(graph)
+
+  # Get place boundary related to the place name as a geodataframe
+  area = ox.geocode_to_gdf(name)
+
+  fig, axs = plt.subplots(nrows=len(kinds),ncols=2, figsize=(10,10*len(kinds)) )
+  fig.tight_layout()
+  for i in range(len(kinds)):
+    # Plot the footprint
+    area.plot(ax=axs[i][0], facecolor="white", zorder=1)
+    area.plot(ax=axs[i][1], facecolor="white", zorder=1)
+
+    # Plot street edges
+    edges.plot(ax=axs[i][0], linewidth=1, edgecolor="dimgray", zorder=2)
+    axs[i][0].set_xlim([w, e])
+    axs[i][0].set_ylim([s, n])
+    axs[i][0].set_xlabel("longitude")
+    axs[i][0].set_ylabel("latitude")
+    axs[i][0].title.set_text("n_"+kinds[i])
+
+    edges.plot(ax=axs[i][1], linewidth=1, edgecolor="dimgray", zorder=2)
+    axs[i][1].set_xlim([w, e])
+    axs[i][1].set_ylim([s, n])
+    axs[i][1].set_xlabel("longitude")
+    axs[i][1].set_ylabel("latitude")
+    axs[i][1].title.set_text("d_"+kinds[i])
+
+    # Plot all POIs 
+    points.plot(ax=axs[i][0], column="n_"+kinds[i], cmap="plasma",alpha=alpha, markersize=5, zorder=3, legend=True)
+    points.plot(ax=axs[i][1], column="d_"+kinds[i], cmap="plasma",alpha=alpha, markersize=5, zorder=3, legend=True)
+
 # --------------------------------------------------------------------------------------------
 # GENERATING FEATURES
 # --------------------------------------------------------------------------------------------
